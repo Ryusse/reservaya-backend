@@ -13,5 +13,9 @@ Rails.application.routes.draw do
       patch :cancel
     end
   end
-  resource :dashboard, only: [:show]
+  resource :dashboard, only: [:show], controller: :dashboard
+
+  namespace :dashboard do
+    resource :occupancy, only: [:show]
+  end
 end
