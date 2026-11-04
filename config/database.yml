@@ -32,6 +32,7 @@ development:
   queue:
     <<: *default
     database: reservaya_development_queue
+    migrations_paths: db/queue_migrate
     username: <%= ENV.fetch("DB_USERNAME", "user") %>
     password: <%= ENV.fetch("DB_PASSWORD", "password") %>
     host: <%= ENV.fetch("DB_HOST", "postgres") %>
@@ -52,6 +53,7 @@ test:
   queue:
     <<: *default
     database: reservaya_test_queue
+    migrations_paths: db/queue_migrate
     username: <%= ENV.fetch("DB_USERNAME", "user") %>
     password: <%= ENV.fetch("DB_PASSWORD", "password") %>
     host: <%= ENV.fetch("DB_HOST", "postgres") %>
