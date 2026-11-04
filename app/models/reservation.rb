@@ -65,8 +65,12 @@ class Reservation < ApplicationRecord
     starts_at <= Time.current
   end
 
-  def cancellable?
+  def modifiable?
     confirmed? && !started?
+  end
+
+  def cancellable?
+    modifiable?
   end
 
   private

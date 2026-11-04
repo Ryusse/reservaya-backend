@@ -33,6 +33,49 @@ RSpec.describe "Reservations", type: :request do
     end
   end
 
+  describe "PATCH /reservations/:id" do
+    let(:private_space) { create(:space, capacity: 1, space_type: :private_space, start_time: "08:00", end_time: "18:00") }
+    let(:reservation) do
+      create(:reservation, user: user, space: private_space, date: Date.current + 1.day, start_time: "09:00", end_time: "10:00")
+    end
+    let(:update_payload) { { reservation: { start_time: "11:00", end_time: "12:00" } } }
+
+    it "updates the user's own reservation keeping its id" do
+      patch "/reservations/#{reservation.id}", params: update_payload, headers: headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(reservation.reload.start_time.strftime("%H:%M")).to eq("11:00")
+    end
+
+    it "responds 422 and keeps the original when the new slot is taken" do
+      create(:reservation, space: private_space, user: create(:user), date: Date.current + 1.day,
+                           start_time: "11:00", end_time: "12:00")
+
+      patch "/reservations/#{reservation.id}", params: { reservation: { start_time: "11:30", end_time: "12:30" } },
+                                               headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)["errors"]).not_to be_empty
+      expect(reservation.reload.start_time.strftime("%H:%M")).to eq("09:00")
+    end
+
+    it "responds 403 when the reservation belongs to another user" do
+      other_reservation = create(:reservation, space: private_space, date: Date.current + 1.day,
+                                               start_time: "13:00", end_time: "14:00")
+
+      patch "/reservations/#{other_reservation.id}", params: update_payload, headers: headers, as: :json
+
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "responds 404 with a JSON error when the reservation does not exist" do
+      patch "/reservations/0", params: update_payload, headers: headers, as: :json
+
+      expect(response).to have_http_status(:not_found)
+      expect(JSON.parse(response.body)["error"]).to eq("No encontrado")
+    end
+  end
+
   describe "PATCH /reservations/:id/cancel" do
     let(:reservation) do
       create(:reservation, user: user, space: space, date: Date.current + 1.day, start_time: "09:00", end_time: "10:00")

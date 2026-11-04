@@ -110,6 +110,13 @@ RSpec.describe Reservation, type: :model do
       expect(reservation).to be_valid
     end
 
+    it "is modifiable only while confirmed and not started" do
+      expect(reservation).to be_modifiable
+
+      reservation.status = :cancelled
+      expect(reservation).not_to be_modifiable
+    end
+
     it "is not started when its start time is in the future" do
       expect(reservation).not_to be_started
     end

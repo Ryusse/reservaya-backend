@@ -145,6 +145,49 @@ paths:
           description: La reserva ya fue cancelada o ya comenzó
         '404':
           description: La reserva no existe
+  "/reservations/{id}":
+    patch:
+      summary: Modificar una reserva propia
+      tags:
+      - Reservas
+      security:
+      - bearer_auth: []
+        cookie_auth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Reserva modificada
+        '422':
+          description: El nuevo horario ya está ocupado o la reserva no se puede modificar
+        '404':
+          description: La reserva no existe
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reservation:
+                  type: object
+                  properties:
+                    space_id:
+                      type: integer
+                    date:
+                      type: string
+                      example: '2026-10-10'
+                    start_time:
+                      type: string
+                      example: '11:00'
+                    end_time:
+                      type: string
+                      example: '12:00'
+                    seats_reserved:
+                      type: integer
   "/spaces/{id}":
     get:
       summary: Obtener disponibilidad de un espacio
