@@ -24,7 +24,20 @@ class Space < ApplicationRecord
 
   validate :end_time_after_start_time
 
-  def availability_blocks(date)
+  def availability_blocks(date, now: Time.current)
+    blocks = schedule_blocks(date)
+    return blocks unless date == now.to_date
+
+    cutoff = next_bookable_time(now)
+
+    blocks.filter_map do |block|
+      next if block[:end_time] <= cutoff
+
+      block.merge(start_time: [ block[:start_time], cutoff ].max)
+    end
+  end
+
+  def schedule_blocks(date)
     return [] unless active? && start_time.present? && end_time.present?
 
     reserved = reservations.confirmed.where(date: date)
@@ -78,6 +91,10 @@ class Space < ApplicationRecord
   end
 
   private
+
+  def next_bookable_time(now)
+    (now.beginning_of_minute + 1.minute).strftime("%H:%M")
+  end
 
   def end_time_after_start_time
     return if start_time.blank? || end_time.blank?

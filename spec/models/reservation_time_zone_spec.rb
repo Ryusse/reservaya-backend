@@ -5,11 +5,11 @@ RSpec.describe "Application time zone", type: :model do
 
   let(:space) { create(:space, space_type: :private_space, capacity: 1, start_time: "08:00", end_time: "23:00") }
 
-  it "uses Bogota as the application time zone" do
-    expect(Time.zone.name).to eq("Bogota")
+  it "uses Lima as the application time zone" do
+    expect(Time.zone.name).to eq("Lima")
   end
 
-  it "counts the current day in Bogota, not in UTC" do
+  it "counts the current day in Lima, not in UTC" do
     travel_to(Time.utc(2026, 11, 4, 3, 0)) do
       expect(Date.current).to eq(Date.new(2026, 11, 3))
     end
@@ -23,7 +23,7 @@ RSpec.describe "Application time zone", type: :model do
     expect(raw).to eq("start_time" => "10:00:00", "end_time" => "12:00:00")
   end
 
-  it "considers a reservation started at its Bogota wall-clock start time" do
+  it "considers a reservation started at its Lima wall-clock start time" do
     travel_to(Time.utc(2026, 11, 4, 3, 0)) do
       reservation = build(:reservation, space: space, date: Date.new(2026, 11, 3), start_time: "21:00", end_time: "22:00")
 
@@ -31,7 +31,7 @@ RSpec.describe "Application time zone", type: :model do
     end
   end
 
-  it "does not consider a reservation started before its Bogota start time" do
+  it "does not consider a reservation started before its Lima start time" do
     travel_to(Time.utc(2026, 11, 4, 3, 0)) do
       reservation = build(:reservation, space: space, date: Date.new(2026, 11, 3), start_time: "23:00", end_time: "23:30")
 

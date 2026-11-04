@@ -45,6 +45,8 @@ class Reservation < ApplicationRecord
     validate :availability_by_space_type
   end
 
+  validate :start_not_in_the_past, if: -> { confirmed? && schedule_changed? }
+
   def cancel
     unless confirmed?
       errors.add(:base, "Solo se pueden cancelar reservas confirmadas")
@@ -77,6 +79,16 @@ class Reservation < ApplicationRecord
 
   def starts_at
     date.in_time_zone + start_time.seconds_since_midnight
+  end
+
+  def schedule_changed?
+    new_record? || will_save_change_to_date? || will_save_change_to_start_time?
+  end
+
+  def start_not_in_the_past
+    return if date.blank? || start_time.blank?
+
+    errors.add(:base, "No puede reservar un horario que ya comenzó") if started?
   end
 
   def end_time_after_start_time
