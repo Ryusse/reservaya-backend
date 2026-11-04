@@ -80,6 +80,44 @@ paths:
       responses:
         '200':
           description: Sesión cerrada
+  "/dashboard/occupancy":
+    get:
+      summary: Ocupación de espacios por día y hora (solo administradores)
+      tags:
+      - Dashboard
+      security:
+      - bearer_auth: []
+        cookie_auth: []
+      parameters:
+      - name: from
+        in: query
+        required: false
+        example: '2026-11-01'
+        description: Fecha inicial (AAAA-MM-DD). Por defecto, inicio del mes actual.
+        schema:
+          type: string
+      - name: to
+        in: query
+        required: false
+        example: '2026-11-30'
+        description: Fecha final (AAAA-MM-DD). Por defecto, fin del mes actual. Máximo
+          92 días de rango.
+        schema:
+          type: string
+      - name: space_id
+        in: query
+        required: false
+        description: Limita el reporte a un espacio.
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Reporte de ocupación
+        '422':
+          description: Periodo inválido (fechas mal formadas, rango invertido o mayor
+            a 92 días)
+        '403':
+          description: Usuario sin rol de administrador
   "/reservations":
     post:
       summary: Crear una reserva

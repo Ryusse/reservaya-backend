@@ -1,7 +1,7 @@
 class DashboardController < ApplicationController
   before_action :require_login
 
-  def index
+  def show
     if current_user.admin?
       render :index_admin, status: :ok
     else
