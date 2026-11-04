@@ -101,6 +101,68 @@ RSpec.describe Reservation, type: :model do
     end
   end
 
+  describe "lifecycle rules" do
+    it "skips availability rules for cancelled reservations" do
+      reservation.status = :cancelled
+      space.update!(status: :inactive)
+      reservation.date = Date.current - 1.day
+
+      expect(reservation).to be_valid
+    end
+
+    it "is modifiable only while confirmed and not started" do
+      expect(reservation).to be_modifiable
+
+      reservation.status = :cancelled
+      expect(reservation).not_to be_modifiable
+    end
+
+    it "is not started when its start time is in the future" do
+      expect(reservation).not_to be_started
+    end
+
+    it "is started when its start time has already passed" do
+      reservation.date = Date.current
+      reservation.start_time = "00:00"
+
+      expect(reservation).to be_started
+    end
+
+    it "cancels a confirmed reservation that has not started" do
+      reservation.save!
+
+      expect(reservation.cancel).to be(true)
+      expect(reservation.reload).to be_cancelled
+    end
+
+    it "cancels even when the space was deactivated after booking" do
+      reservation.save!
+      space.update!(status: :inactive)
+
+      expect(reservation.cancel).to be(true)
+      expect(reservation.reload).to be_cancelled
+    end
+
+    it "refuses to cancel a reservation that already started" do
+      started_space = create(:space, start_time: "00:00", end_time: "23:59", capacity: 10, space_type: :shared_space)
+      started = create(:reservation, user: user, space: started_space, date: Date.current + 1.day,
+                                     start_time: "00:00", end_time: "00:30")
+      started.update_columns(date: Date.current)
+
+      expect(started.cancel).to be(false)
+      expect(started.errors[:base]).to include("No se puede cancelar una reserva que ya comenzó")
+      expect(started.reload).to be_confirmed
+    end
+
+    it "refuses to cancel a reservation that is already cancelled" do
+      reservation.save!
+      reservation.cancel
+
+      expect(reservation.cancel).to be(false)
+      expect(reservation.errors[:base]).to include("Solo se pueden cancelar reservas confirmadas")
+    end
+  end
+
   describe "availability by space type" do
     context "when the space is a private_space" do
       let(:private_space) { create(:space, capacity: 5, space_type: :private_space, start_time: "08:00", end_time: "18:00") }

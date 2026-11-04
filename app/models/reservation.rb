@@ -33,16 +33,63 @@ class Reservation < ApplicationRecord
   validates :seats_reserved, numericality: { greater_than: 0 }
 
   validate :end_time_after_start_time
-  validate :date_not_in_the_past
-  validate :date_within_allowed_range
-  validate :space_is_active
-  validate :within_space_schedule
-  validate :seats_reserved_within_space_capacity
-  validate :user_max_active_reservations
-  validate :user_has_no_overlapping_reservations
-  validate :availability_by_space_type
+
+  with_options if: :confirmed? do
+    validate :date_not_in_the_past
+    validate :date_within_allowed_range
+    validate :space_is_active
+    validate :within_space_schedule
+    validate :seats_reserved_within_space_capacity
+    validate :user_max_active_reservations
+    validate :user_has_no_overlapping_reservations
+    validate :availability_by_space_type
+  end
+
+  validate :start_not_in_the_past, if: -> { confirmed? && schedule_changed? }
+
+  def cancel
+    unless confirmed?
+      errors.add(:base, "Solo se pueden cancelar reservas confirmadas")
+      return false
+    end
+
+    if started?
+      errors.add(:base, "No se puede cancelar una reserva que ya comenzó")
+      return false
+    end
+
+    update(status: :cancelled)
+  end
+
+  def started?
+    return false if date.blank? || start_time.blank?
+
+    starts_at <= Time.current
+  end
+
+  def modifiable?
+    confirmed? && !started?
+  end
+
+  def cancellable?
+    modifiable?
+  end
 
   private
+
+  def starts_at
+    date.in_time_zone + start_time.seconds_since_midnight
+  end
+
+  def schedule_changed?
+    new_record? || will_save_change_to_date? || will_save_change_to_start_time?
+  end
+
+  def start_not_in_the_past
+    return if date.blank? || start_time.blank?
+
+    errors.add(:base, "No puede reservar un horario que ya comenzó") if started?
+  end
 
   def end_time_after_start_time
     return if start_time.blank? || end_time.blank?
@@ -89,7 +136,6 @@ class Reservation < ApplicationRecord
 
   def user_max_active_reservations
     return if user.blank?
-    return unless confirmed?
 
     active_count = user.reservations.confirmed
                        .where("date >= ?", Date.current)
@@ -103,7 +149,6 @@ class Reservation < ApplicationRecord
 
   def user_has_no_overlapping_reservations
     return if user.blank? || date.blank? || start_time.blank? || end_time.blank?
-    return unless confirmed?
 
     overlapping_user_reservations = user.reservations.confirmed
                                         .where(date: date)
@@ -117,7 +162,6 @@ class Reservation < ApplicationRecord
 
   def availability_by_space_type
     return if space.blank? || date.blank? || start_time.blank? || end_time.blank?
-    return unless confirmed?
 
     if space.private_space?
       validate_private_space_overlap
