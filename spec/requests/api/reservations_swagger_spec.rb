@@ -110,4 +110,49 @@ RSpec.describe 'Reservations API', type: :request do
       end
     end
   end
+
+  path '/reservations/{id}/cancel' do
+    patch 'Cancelar una reserva propia' do
+      tags 'Reservas'
+      produces 'application/json'
+      security [ bearer_auth: [], cookie_auth: [] ]
+
+      parameter name: :id, in: :path, type: :integer, required: true
+
+      response '200', 'Reserva cancelada' do
+        let(:user) { User.create!(name: 'Test', email: 'cancel@test.com', password: 'Password123', role: :user) }
+        let(:space) { create(:space, capacity: 10, start_time: '08:00', end_time: '18:00') }
+        let(:id) { create(:reservation, user: user, space: space, date: Date.tomorrow, start_time: '10:00', end_time: '12:00').id }
+
+        before do
+          post '/session', params: { email: user.email, password: 'Password123' }, as: :json
+        end
+
+        run_test!
+      end
+
+      response '422', 'La reserva ya fue cancelada o ya comenzó' do
+        let(:user) { User.create!(name: 'Test', email: 'cancel2@test.com', password: 'Password123', role: :user) }
+        let(:space) { create(:space, capacity: 10, start_time: '08:00', end_time: '18:00') }
+        let(:id) { create(:reservation, user: user, space: space, date: Date.tomorrow, start_time: '10:00', end_time: '12:00', status: :cancelled).id }
+
+        before do
+          post '/session', params: { email: user.email, password: 'Password123' }, as: :json
+        end
+
+        run_test!
+      end
+
+      response '404', 'La reserva no existe' do
+        let(:user) { User.create!(name: 'Test', email: 'cancel3@test.com', password: 'Password123', role: :user) }
+        let(:id) { 0 }
+
+        before do
+          post '/session', params: { email: user.email, password: 'Password123' }, as: :json
+        end
+
+        run_test!
+      end
+    end
+  end
 end
