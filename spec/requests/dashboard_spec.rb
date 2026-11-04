@@ -30,18 +30,18 @@ RSpec.describe "Dashboard", type: :request do
 
   describe "GET /dashboard/occupancy" do
     let(:space) { create(:space, space_type: :private_space, capacity: 1, start_time: "08:00", end_time: "18:00") }
-    let(:today) { Date.current.to_s }
+    let(:day) { (Date.current + 1).to_s }
 
     before do
-      create(:reservation, space: space, user: user, date: Date.current, start_time: "09:00", end_time: "10:00")
+      create(:reservation, space: space, user: user, date: Date.current + 1, start_time: "09:00", end_time: "10:00")
     end
 
     it "responds 200 with the occupancy report for administrators" do
-      get "/dashboard/occupancy", params: { from: today, to: today }, headers: json_headers(admin)
+      get "/dashboard/occupancy", params: { from: day, to: day }, headers: json_headers(admin)
 
       expect(response).to have_http_status(:ok)
       body = JSON.parse(response.body)
-      expect(body["from"]).to eq(today)
+      expect(body["from"]).to eq(day)
       expect(body["spaces"].find { |row| row["id"] == space.id }["reservations"]).to eq(1)
       expect(body["summary"]).to include("occupancy_rate", "underused_spaces", "high_demand_spaces")
     end
@@ -66,7 +66,7 @@ RSpec.describe "Dashboard", type: :request do
     end
 
     it "responds 422 when the start date is after the end date" do
-      get "/dashboard/occupancy", params: { from: today, to: (Date.current - 1).to_s }, headers: json_headers(admin)
+      get "/dashboard/occupancy", params: { from: day, to: (Date.current - 1).to_s }, headers: json_headers(admin)
 
       expect(response).to have_http_status(:unprocessable_entity)
       expect(JSON.parse(response.body)["error"]).to eq("La fecha inicial no puede ser posterior a la final")
@@ -79,14 +79,14 @@ RSpec.describe "Dashboard", type: :request do
     end
 
     it "responds 422 when a date is malformed" do
-      get "/dashboard/occupancy", params: { from: "no-es-fecha", to: today }, headers: json_headers(admin)
+      get "/dashboard/occupancy", params: { from: "no-es-fecha", to: day }, headers: json_headers(admin)
 
       expect(response).to have_http_status(:unprocessable_entity)
       expect(JSON.parse(response.body)["error"]).to eq("Fecha inválida. Usa el formato AAAA-MM-DD")
     end
 
     it "responds 404 when the requested space does not exist" do
-      get "/dashboard/occupancy", params: { from: today, to: today, space_id: 0 }, headers: json_headers(admin)
+      get "/dashboard/occupancy", params: { from: day, to: day, space_id: 0 }, headers: json_headers(admin)
 
       expect(response).to have_http_status(:not_found)
     end
