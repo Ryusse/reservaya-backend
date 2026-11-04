@@ -92,7 +92,7 @@ class OccupancyReport
   end
 
   def operating_spaces
-    scope = Space.where.not(start_time: nil).where.not(end_time: nil).order(:name)
+    scope = Space.active.where.not(start_time: nil).where.not(end_time: nil).order(:name)
     scope = scope.where(id: space.id) if space
     scope.to_a
   end

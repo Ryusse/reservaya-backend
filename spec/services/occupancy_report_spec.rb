@@ -105,6 +105,16 @@ RSpec.describe OccupancyReport do
       expect(report[:spaces].map { |row| row[:id] }).to eq([ space.id ])
     end
 
+    it "excludes inactive spaces, which cannot be booked" do
+      active = create(:space, space_type: :private_space, capacity: 1, start_time: "08:00", end_time: "18:00")
+      inactive = create(:space, space_type: :private_space, capacity: 1, start_time: "08:00", end_time: "18:00", status: :inactive)
+
+      report = described_class.new(from: day, to: day).call
+
+      expect(report[:spaces].map { |row| row[:id] }).to include(active.id)
+      expect(report[:spaces].map { |row| row[:id] }).not_to include(inactive.id)
+    end
+
     it "skips spaces without an operating window" do
       space = create(:space, space_type: :private_space, capacity: 1)
       space.update_columns(start_time: nil, end_time: nil)

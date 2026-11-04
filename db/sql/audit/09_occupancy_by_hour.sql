@@ -22,7 +22,7 @@ ventana AS (
                        - GREATEST(extract(epoch FROM s.start_time), h.hora * 3600)) AS segundos_ventana
     FROM spaces s
     CROSS JOIN horas h
-    WHERE s.start_time IS NOT NULL AND s.end_time IS NOT NULL
+    WHERE s.status = 0 AND s.start_time IS NOT NULL AND s.end_time IS NOT NULL
 ),
 uso AS (
     SELECT r.space_id,
