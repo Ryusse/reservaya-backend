@@ -95,8 +95,9 @@ RSpec.describe ReservationBooking do
 
     it "refuses to change a reservation that already started" do
       started_space = create(:space, start_time: "00:00", end_time: "23:59", capacity: 10, space_type: :shared_space)
-      started = create(:reservation, user: user, space: started_space, date: Date.current,
+      started = create(:reservation, user: user, space: started_space, date: Date.current + 1.day,
                                      start_time: "00:00", end_time: "00:30")
+      started.update_columns(date: Date.current)
 
       result = described_class.new(started, { end_time: "00:45" }).call
 
