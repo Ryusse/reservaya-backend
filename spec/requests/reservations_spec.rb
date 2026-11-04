@@ -32,4 +32,54 @@ RSpec.describe "Reservations", type: :request do
       expect(JSON.parse(response.body)["errors"]).not_to be_empty
     end
   end
+
+  describe "PATCH /reservations/:id/cancel" do
+    let(:reservation) do
+      create(:reservation, user: user, space: space, date: Date.current + 1.day, start_time: "09:00", end_time: "10:00")
+    end
+
+    it "cancels the user's own reservation" do
+      patch "/reservations/#{reservation.id}/cancel", headers: headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(JSON.parse(response.body)["status"]).to eq("cancelled")
+      expect(reservation.reload).to be_cancelled
+    end
+
+    it "responds 404 with a JSON error when the reservation does not exist" do
+      patch "/reservations/0/cancel", headers: headers, as: :json
+
+      expect(response).to have_http_status(:not_found)
+      expect(JSON.parse(response.body)["error"]).to eq("No encontrado")
+    end
+
+    it "responds 403 when the reservation belongs to another user" do
+      other_reservation = create(:reservation, space: space, date: Date.current + 1.day, start_time: "11:00", end_time: "12:00")
+
+      patch "/reservations/#{other_reservation.id}/cancel", headers: headers, as: :json
+
+      expect(response).to have_http_status(:forbidden)
+      expect(other_reservation.reload).to be_confirmed
+    end
+
+    it "responds 422 when the reservation is already cancelled" do
+      reservation.update!(status: :cancelled)
+
+      patch "/reservations/#{reservation.id}/cancel", headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)["errors"]).to include("Solo se pueden cancelar reservas confirmadas")
+    end
+
+    it "responds 422 when the reservation already started" do
+      started_space = create(:space, start_time: "00:00", end_time: "23:59", capacity: 10, space_type: :shared_space)
+      started = create(:reservation, user: user, space: started_space, date: Date.current,
+                                     start_time: "00:00", end_time: "00:30")
+
+      patch "/reservations/#{started.id}/cancel", headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(started.reload).to be_confirmed
+    end
+  end
 end

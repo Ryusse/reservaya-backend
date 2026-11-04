@@ -124,6 +124,27 @@ paths:
                   - start_time
                   - end_time
                   - seats_reserved
+  "/reservations/{id}/cancel":
+    patch:
+      summary: Cancelar una reserva propia
+      tags:
+      - Reservas
+      security:
+      - bearer_auth: []
+        cookie_auth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Reserva cancelada
+        '422':
+          description: La reserva ya fue cancelada o ya comenzó
+        '404':
+          description: La reserva no existe
   "/spaces/{id}":
     get:
       summary: Obtener disponibilidad de un espacio

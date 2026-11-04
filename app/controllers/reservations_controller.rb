@@ -48,7 +48,7 @@ class ReservationsController < ApplicationController
   end
 
   def cancel
-    if @reservation.update(status: :cancelled)
+    if @reservation.cancel
       render :cancel, status: :ok
     else
       render json: { errors: @reservation.errors.full_messages }, status: :unprocessable_entity
