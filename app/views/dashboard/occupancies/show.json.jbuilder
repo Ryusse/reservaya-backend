@@ -1,0 +1,5 @@
+json.from @report[:from]
+json.to @report[:to]
+json.days @report[:days]
+json.summary @report[:summary]
+json.spaces @report[:spaces]

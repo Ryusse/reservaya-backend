@@ -22,9 +22,9 @@ end
 json.role "admin"
 
 json.user do
-  json.id current_user.id
-  json.name current_user.name
-  json.email current_user.email
+  json.id @current_user.id
+  json.name @current_user.name
+  json.email @current_user.email
 end
 
 json.metrics do
