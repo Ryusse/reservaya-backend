@@ -110,6 +110,20 @@ paths:
         description: Limita el reporte a un espacio.
         schema:
           type: integer
+      - name: from_hour
+        in: query
+        required: false
+        example: 9
+        description: Primera hora del día incluida (0 a 23). Por defecto, 0.
+        schema:
+          type: integer
+      - name: to_hour
+        in: query
+        required: false
+        example: 18
+        description: Última hora del día incluida (0 a 23). Por defecto, 23.
+        schema:
+          type: integer
       responses:
         '200':
           description: Reporte de ocupación

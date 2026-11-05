@@ -13,6 +13,10 @@ RSpec.describe 'Dashboard API', type: :request do
                 description: 'Fecha final (AAAA-MM-DD). Por defecto, fin del mes actual. Máximo 92 días de rango.'
       parameter name: :space_id, in: :query, type: :integer, required: false,
                 description: 'Limita el reporte a un espacio.'
+      parameter name: :from_hour, in: :query, type: :integer, required: false, example: 9,
+                description: 'Primera hora del día incluida (0 a 23). Por defecto, 0.'
+      parameter name: :to_hour, in: :query, type: :integer, required: false, example: 18,
+                description: 'Última hora del día incluida (0 a 23). Por defecto, 23.'
 
       response '200', 'Reporte de ocupación' do
         let(:admin) { User.create!(name: 'Admin', email: 'occupancy-admin@test.com', password: 'Password123', role: :admin) }
