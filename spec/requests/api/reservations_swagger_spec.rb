@@ -110,4 +110,115 @@ RSpec.describe 'Reservations API', type: :request do
       end
     end
   end
+
+  path '/reservations/{id}/cancel' do
+    patch 'Cancelar una reserva propia' do
+      tags 'Reservas'
+      produces 'application/json'
+      security [ bearer_auth: [], cookie_auth: [] ]
+
+      parameter name: :id, in: :path, type: :integer, required: true
+
+      response '200', 'Reserva cancelada' do
+        let(:user) { User.create!(name: 'Test', email: 'cancel@test.com', password: 'Password123', role: :user) }
+        let(:space) { create(:space, capacity: 10, start_time: '08:00', end_time: '18:00') }
+        let(:id) { create(:reservation, user: user, space: space, date: Date.tomorrow, start_time: '10:00', end_time: '12:00').id }
+
+        before do
+          post '/session', params: { email: user.email, password: 'Password123' }, as: :json
+        end
+
+        run_test!
+      end
+
+      response '422', 'La reserva ya fue cancelada o ya comenzó' do
+        let(:user) { User.create!(name: 'Test', email: 'cancel2@test.com', password: 'Password123', role: :user) }
+        let(:space) { create(:space, capacity: 10, start_time: '08:00', end_time: '18:00') }
+        let(:id) { create(:reservation, user: user, space: space, date: Date.tomorrow, start_time: '10:00', end_time: '12:00', status: :cancelled).id }
+
+        before do
+          post '/session', params: { email: user.email, password: 'Password123' }, as: :json
+        end
+
+        run_test!
+      end
+
+      response '404', 'La reserva no existe' do
+        let(:user) { User.create!(name: 'Test', email: 'cancel3@test.com', password: 'Password123', role: :user) }
+        let(:id) { 0 }
+
+        before do
+          post '/session', params: { email: user.email, password: 'Password123' }, as: :json
+        end
+
+        run_test!
+      end
+    end
+  end
+
+  path '/reservations/{id}' do
+    patch 'Modificar una reserva propia' do
+      tags 'Reservas'
+      consumes 'application/json'
+      produces 'application/json'
+      security [ bearer_auth: [], cookie_auth: [] ]
+
+      parameter name: :id, in: :path, type: :integer, required: true
+      parameter name: :reservation, in: :body, schema: {
+        type: :object,
+        properties: {
+          reservation: {
+            type: :object,
+            properties: {
+              space_id: { type: :integer },
+              date: { type: :string, example: '2026-10-10' },
+              start_time: { type: :string, example: '11:00' },
+              end_time: { type: :string, example: '12:00' },
+              seats_reserved: { type: :integer }
+            }
+          }
+        }
+      }
+
+      response '200', 'Reserva modificada' do
+        let(:user) { User.create!(name: 'Test', email: 'update@test.com', password: 'Password123', role: :user) }
+        let(:space) { create(:space, capacity: 10, start_time: '08:00', end_time: '18:00') }
+        let(:id) { create(:reservation, user: user, space: space, date: Date.tomorrow, start_time: '10:00', end_time: '12:00').id }
+        let(:reservation) { { reservation: { start_time: '13:00', end_time: '14:00' } } }
+
+        before do
+          post '/session', params: { email: user.email, password: 'Password123' }, as: :json
+        end
+
+        run_test!
+      end
+
+      response '422', 'El nuevo horario ya está ocupado o la reserva no se puede modificar' do
+        let(:user) { User.create!(name: 'Test', email: 'update2@test.com', password: 'Password123', role: :user) }
+        let(:space) { create(:space, space_type: :private_space, capacity: 1, start_time: '08:00', end_time: '18:00') }
+        let(:target_space) { create(:space, space_type: :private_space, capacity: 1, start_time: '08:00', end_time: '18:00') }
+        let(:id) { create(:reservation, user: user, space: space, date: Date.tomorrow, start_time: '10:00', end_time: '12:00').id }
+        let(:reservation) { { reservation: { space_id: target_space.id, start_time: '10:30', end_time: '11:30' } } }
+
+        before do
+          create(:reservation, space: target_space, date: Date.tomorrow, start_time: '10:00', end_time: '12:00')
+          post '/session', params: { email: user.email, password: 'Password123' }, as: :json
+        end
+
+        run_test!
+      end
+
+      response '404', 'La reserva no existe' do
+        let(:user) { User.create!(name: 'Test', email: 'update3@test.com', password: 'Password123', role: :user) }
+        let(:id) { 0 }
+        let(:reservation) { { reservation: { start_time: '13:00', end_time: '14:00' } } }
+
+        before do
+          post '/session', params: { email: user.email, password: 'Password123' }, as: :json
+        end
+
+        run_test!
+      end
+    end
+  end
 end

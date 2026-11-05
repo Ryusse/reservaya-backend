@@ -52,24 +52,24 @@ Space.find_or_create_by!(name: "Sala Inactiva Demo") do |space|
   space.space_type = :shared_space
 end
 
-# Reservas de prueba para el día de hoy
-today = Date.current
+# Reservas de prueba para mañana (las de hoy ya pueden haber comenzado)
+seed_day = Date.current + 1.day
 
 # Bloquear la sala privada de 10:00 a 12:00
-Reservation.find_or_create_by!(space: private_space, date: today, start_time: "10:00", end_time: "12:00", user: user1) do |r|
+Reservation.find_or_create_by!(space: private_space, date: seed_day, start_time: "10:00", end_time: "12:00", user: user1) do |r|
   r.seats_reserved = 4
   r.status = :confirmed
 end
 
 # Uso parcial de la sala compartida de 09:00 a 11:00 (4 asientos)
-Reservation.find_or_create_by!(space: shared_space, date: today, start_time: "09:00", end_time: "11:00", user: user2) do |r|
+Reservation.find_or_create_by!(space: shared_space, date: seed_day, start_time: "09:00", end_time: "11:00", user: user2) do |r|
   r.seats_reserved = 4
   r.status = :confirmed
 end
 
 # Uso parcial de la sala compartida de 10:00 a 13:00 (5 asientos)
 # En el lapso de 10:00 a 11:00 estarán ocupados 4 + 5 = 9 asientos (quedará 1 libre)
-Reservation.find_or_create_by!(space: shared_space, date: today, start_time: "10:00", end_time: "13:00", user: user3) do |r|
+Reservation.find_or_create_by!(space: shared_space, date: seed_day, start_time: "10:00", end_time: "13:00", user: user3) do |r|
   r.seats_reserved = 5
   r.status = :confirmed
 end

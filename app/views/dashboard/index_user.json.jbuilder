@@ -1,5 +1,5 @@
 current_month_range = Date.current.beginning_of_month..Date.current.end_of_month
-my_confirmed_reservations = current_user.reservations.confirmed
+my_confirmed_reservations = @current_user.reservations.confirmed
 my_current_month_reservations = my_confirmed_reservations.where(date: current_month_range)
 
 total_seconds = my_current_month_reservations.sum do |reservation|
@@ -9,9 +9,9 @@ end
 json.role "user"
 
 json.user do
-  json.id current_user.id
-  json.name current_user.name
-  json.email current_user.email
+  json.id @current_user.id
+  json.name @current_user.name
+  json.email @current_user.email
 end
 
 json.metrics do
