@@ -159,7 +159,7 @@ RSpec.describe Reservation, type: :model do
       reservation.cancel
 
       expect(reservation.cancel).to be(false)
-      expect(reservation.errors[:base]).to include("Solo se pueden cancelar reservas confirmadas")
+      expect(reservation.errors[:base]).to include("La reserva ya está cancelada")
     end
   end
 

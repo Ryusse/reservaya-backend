@@ -72,7 +72,7 @@ RSpec.describe "Reservations", type: :request do
       patch "/reservations/0", params: update_payload, headers: headers, as: :json
 
       expect(response).to have_http_status(:not_found)
-      expect(JSON.parse(response.body)["error"]).to eq("No encontrado")
+      expect(JSON.parse(response.body)["error"]).to eq("La reserva no existe")
     end
   end
 
@@ -93,7 +93,7 @@ RSpec.describe "Reservations", type: :request do
       patch "/reservations/0/cancel", headers: headers, as: :json
 
       expect(response).to have_http_status(:not_found)
-      expect(JSON.parse(response.body)["error"]).to eq("No encontrado")
+      expect(JSON.parse(response.body)["error"]).to eq("La reserva no existe")
     end
 
     it "responds 403 when the reservation belongs to another user" do
@@ -111,7 +111,7 @@ RSpec.describe "Reservations", type: :request do
       patch "/reservations/#{reservation.id}/cancel", headers: headers, as: :json
 
       expect(response).to have_http_status(:unprocessable_entity)
-      expect(JSON.parse(response.body)["errors"]).to include("Solo se pueden cancelar reservas confirmadas")
+      expect(JSON.parse(response.body)["errors"]).to include("La reserva ya está cancelada")
     end
 
     it "responds 422 when the reservation already started" do

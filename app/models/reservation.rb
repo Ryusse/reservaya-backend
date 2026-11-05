@@ -48,6 +48,11 @@ class Reservation < ApplicationRecord
   validate :start_not_in_the_past, if: -> { confirmed? && schedule_changed? }
 
   def cancel
+    if cancelled?
+      errors.add(:base, "La reserva ya está cancelada")
+      return false
+    end
+
     unless confirmed?
       errors.add(:base, "Solo se pueden cancelar reservas confirmadas")
       return false
