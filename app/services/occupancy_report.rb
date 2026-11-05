@@ -19,7 +19,7 @@ class OccupancyReport
            ) AS used_seconds
     FROM reservations r
     INNER JOIN spaces s ON s.id = r.space_id
-    CROSS JOIN generate_series(0, :last_hour) AS h(hour)
+    CROSS JOIN generate_series(:first_hour, :last_hour) AS h(hour)
     WHERE r.status = :confirmed
       AND r.date BETWEEN :from AND :to
       AND r.space_id IN (:space_ids)
@@ -54,14 +54,17 @@ class OccupancyReport
     end
   end
 
-  attr_reader :from, :to, :space
+  attr_reader :from, :to, :space, :from_hour, :to_hour
 
-  def initialize(from:, to:, space: nil)
+  def initialize(from:, to:, space: nil, from_hour: 0, to_hour: LAST_HOUR)
     @from = from
     @to = to
     @space = space
+    @from_hour = from_hour
+    @to_hour = to_hour
 
     validate_period!
+    validate_hours!
   end
 
   def call
@@ -85,6 +88,13 @@ class OccupancyReport
   def validate_period!
     raise InvalidPeriod, "La fecha inicial no puede ser posterior a la final" if from > to
     raise InvalidPeriod, "El periodo no puede superar #{MAX_DAYS} días" if days > MAX_DAYS
+  end
+
+  def validate_hours!
+    unless [ from_hour, to_hour ].all? { |hour| hour.is_a?(Integer) && hour.between?(0, LAST_HOUR) }
+      raise InvalidPeriod, "Las horas deben estar entre 0 y #{LAST_HOUR}"
+    end
+    raise InvalidPeriod, "La hora inicial no puede ser posterior a la final" if from_hour > to_hour
   end
 
   def days
@@ -111,7 +121,8 @@ class OccupancyReport
       confirmed: Reservation.statuses[:confirmed],
       private_type: Space.space_types[:private_space],
       space_ids: spaces.map(&:id),
-      last_hour: LAST_HOUR,
+      first_hour: from_hour,
+      last_hour: to_hour,
       seconds_per_hour: SECONDS_PER_HOUR
     }
   end
@@ -155,7 +166,7 @@ class OccupancyReport
     opening = current.start_time.seconds_since_midnight
     closing = current.end_time.seconds_since_midnight
 
-    OPERATING_HOURS.filter_map do |hour|
+    (from_hour..to_hour).filter_map do |hour|
       hour_start = hour * SECONDS_PER_HOUR
       hour_end = hour_start + SECONDS_PER_HOUR
       overlap = [ closing, hour_end ].min - [ opening, hour_start ].max
@@ -179,7 +190,9 @@ class OccupancyReport
   end
 
   def window_seconds(current)
-    current.end_time.seconds_since_midnight - current.start_time.seconds_since_midnight
+    window_start = [ current.start_time.seconds_since_midnight, from_hour * SECONDS_PER_HOUR ].max
+    window_end = [ current.end_time.seconds_since_midnight, (to_hour + 1) * SECONDS_PER_HOUR ].min
+    [ window_end - window_start, 0 ].max
   end
 
   def capacity_units(current)

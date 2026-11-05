@@ -85,6 +85,21 @@ RSpec.describe "Dashboard", type: :request do
       expect(JSON.parse(response.body)["error"]).to eq("Fecha inválida. Usa el formato AAAA-MM-DD")
     end
 
+    it "limits the hours when from_hour and to_hour are given" do
+      get "/dashboard/occupancy", params: { from: day, to: day, from_hour: 9, to_hour: 12 }, headers: json_headers(admin)
+
+      expect(response).to have_http_status(:ok)
+      hours = JSON.parse(response.body)["spaces"].find { |row| row["id"] == space.id }["hours"].map { |h| h["hour"] }
+      expect(hours).to eq([ 9, 10, 11, 12 ])
+    end
+
+    it "responds 422 when an hour is not a number" do
+      get "/dashboard/occupancy", params: { from: day, to: day, from_hour: "nueve" }, headers: json_headers(admin)
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)["error"]).to eq("Las horas deben estar entre 0 y 23")
+    end
+
     it "responds 404 when the requested space does not exist" do
       get "/dashboard/occupancy", params: { from: day, to: day, space_id: 0 }, headers: json_headers(admin)
 
