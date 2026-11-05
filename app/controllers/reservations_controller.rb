@@ -54,7 +54,10 @@ class ReservationsController < ApplicationController
   end
 
   def set_reservation
-    @reservation = Reservation.find(params[:id])
+    @reservation = Reservation.find_by(id: params[:id])
+    return if @reservation
+
+    render json: { error: "La reserva no existe" }, status: :not_found
   end
 
   def authorize_owner_or_admin
