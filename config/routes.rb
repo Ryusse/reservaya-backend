@@ -8,10 +8,14 @@ Rails.application.routes.draw do
 
   resources :users
   resources :spaces
-  resources :reservations, only: [:index, :show, :create] do
+  resources :reservations, only: [:index, :show, :create, :update] do
     member do
       patch :cancel
     end
   end
-  resource :dashboard, only: [:show]
+  resource :dashboard, only: [:show], controller: :dashboard
+
+  namespace :dashboard do
+    resource :occupancy, only: [:show]
+  end
 end

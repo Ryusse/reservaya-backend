@@ -80,6 +80,58 @@ paths:
       responses:
         '200':
           description: Sesión cerrada
+  "/dashboard/occupancy":
+    get:
+      summary: Ocupación de espacios por día y hora (solo administradores)
+      tags:
+      - Dashboard
+      security:
+      - bearer_auth: []
+        cookie_auth: []
+      parameters:
+      - name: from
+        in: query
+        required: false
+        example: '2026-11-01'
+        description: Fecha inicial (AAAA-MM-DD). Por defecto, inicio del mes actual.
+        schema:
+          type: string
+      - name: to
+        in: query
+        required: false
+        example: '2026-11-30'
+        description: Fecha final (AAAA-MM-DD). Por defecto, fin del mes actual. Máximo
+          92 días de rango.
+        schema:
+          type: string
+      - name: space_id
+        in: query
+        required: false
+        description: Limita el reporte a un espacio.
+        schema:
+          type: integer
+      - name: from_hour
+        in: query
+        required: false
+        example: 9
+        description: Primera hora del día incluida (0 a 23). Por defecto, 0.
+        schema:
+          type: integer
+      - name: to_hour
+        in: query
+        required: false
+        example: 18
+        description: Última hora del día incluida (0 a 23). Por defecto, 23.
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Reporte de ocupación
+        '422':
+          description: Periodo inválido (fechas mal formadas, rango invertido o mayor
+            a 92 días)
+        '403':
+          description: Usuario sin rol de administrador
   "/reservations":
     post:
       summary: Crear una reserva
@@ -124,6 +176,70 @@ paths:
                   - start_time
                   - end_time
                   - seats_reserved
+  "/reservations/{id}/cancel":
+    patch:
+      summary: Cancelar una reserva propia
+      tags:
+      - Reservas
+      security:
+      - bearer_auth: []
+        cookie_auth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Reserva cancelada
+        '422':
+          description: La reserva ya fue cancelada o ya comenzó
+        '404':
+          description: La reserva no existe
+  "/reservations/{id}":
+    patch:
+      summary: Modificar una reserva propia
+      tags:
+      - Reservas
+      security:
+      - bearer_auth: []
+        cookie_auth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Reserva modificada
+        '422':
+          description: El nuevo horario ya está ocupado o la reserva no se puede modificar
+        '404':
+          description: La reserva no existe
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reservation:
+                  type: object
+                  properties:
+                    space_id:
+                      type: integer
+                    date:
+                      type: string
+                      example: '2026-10-10'
+                    start_time:
+                      type: string
+                      example: '11:00'
+                    end_time:
+                      type: string
+                      example: '12:00'
+                    seats_reserved:
+                      type: integer
   "/spaces/{id}":
     get:
       summary: Obtener disponibilidad de un espacio

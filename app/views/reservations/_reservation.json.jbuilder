@@ -4,6 +4,7 @@ json.start_time reservation.start_time&.strftime("%H:%M")
 json.end_time reservation.end_time&.strftime("%H:%M")
 json.status reservation.status
 json.seats_reserved reservation.seats_reserved
+json.cancellable reservation.cancellable?
 
 json.space do
   json.id reservation.space.id
