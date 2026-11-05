@@ -17,21 +17,9 @@ class ReservationsController < ApplicationController
   end
 
   def create
-    @space = Space.find_by(id: reservation_params[:space_id])
+    @reservation = current_user.reservations.new
 
-    unless @space
-      return render json: { errors: ["Espacio no encontrado"] }, status: :unprocessable_entity
-    end
-
-    @reservation = current_user.reservations.new(reservation_params)
-
-    success = false
-    Space.transaction do
-      @space.lock!
-      success = @reservation.save
-    end
-
-    if success
+    if ReservationBooking.new(@reservation, reservation_params).call
       notify_reservation_created
       render :create, status: :created
     else
@@ -40,7 +28,7 @@ class ReservationsController < ApplicationController
   end
 
   def update
-    if @reservation.update(reservation_params)
+    if ReservationBooking.new(@reservation, reservation_params).call
       render :update, status: :ok
     else
       render json: { errors: @reservation.errors.full_messages }, status: :unprocessable_entity
@@ -48,7 +36,7 @@ class ReservationsController < ApplicationController
   end
 
   def cancel
-    if @reservation.update(status: :cancelled)
+    if @reservation.cancel
       render :cancel, status: :ok
     else
       render json: { errors: @reservation.errors.full_messages }, status: :unprocessable_entity
@@ -66,7 +54,10 @@ class ReservationsController < ApplicationController
   end
 
   def set_reservation
-    @reservation = Reservation.find(params[:id])
+    @reservation = Reservation.find_by(id: params[:id])
+    return if @reservation
+
+    render json: { error: "La reserva no existe" }, status: :not_found
   end
 
   def authorize_owner_or_admin

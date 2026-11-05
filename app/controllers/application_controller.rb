@@ -3,9 +3,15 @@ class ApplicationController < ActionController::API
 
   SESSION_COOKIE = :reservaya_session
 
+  rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
+
   before_action :ensure_json_request, if: -> { request.post? || request.put? || request.patch? || request.delete? }
 
   private
+
+  def render_not_found
+    render json: { error: "No encontrado" }, status: :not_found
+  end
 
   def ensure_json_request
     return if request.format.json? || request.content_type == "application/json"
